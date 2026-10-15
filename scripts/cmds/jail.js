@@ -1,6 +1,4 @@
 const axios = require("axios");
-const fs = require("fs");
-const path = require("path");
 
 const mahmud = async () => {
         const base = await axios.get("https://raw.githubusercontent.com/mahmudx7/HINATA/main/baseApiUrl.json");
@@ -10,7 +8,7 @@ const mahmud = async () => {
 module.exports = {
         config: {
                 name: "jail",
-                version: "2.7",
+                version: "3.7",
                 author: "MahMUD",
                 countDown: 10,
                 role: 0,
@@ -62,6 +60,8 @@ module.exports = {
                         id2 = senderID;
                 }
 
+                if (!id2) return message.reply(getLang("noTarget"));
+
                 try {
                         const userInfo = await api.getUserInfo(id2);
                         if (userInfo && userInfo[id2]) {
@@ -73,32 +73,21 @@ module.exports = {
                         targetName = "User";
                 }
 
-                if (!id2) return message.reply(getLang("noTarget"));
-
                 api.setMessageReaction("⏳", messageID, () => { }, true);
 
-                const cacheDir = path.join(__dirname, "cache");
-                const filePath = path.join(cacheDir, `jail_${id2}.png`);
-
                 try {
-                        if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir);
+                        const response = await axios.get(`${await mahmud()}/api/fun?type=jail&user=${id2}`);
+                        const stream = await global.utils.getStreamFromURL(response.config.url);
 
-                        const response = await axios.get(`${await mahmud()}/api/fun?type=jail&user=${id2}`, { responseType: "arraybuffer" });
-                        
-                        fs.writeFileSync(filePath, Buffer.from(response.data));
- 
                         api.setMessageReaction("🪽", messageID, () => { }, true);
-  
+
                         return message.reply({
                                 body: getLang("success", targetName),
-                                attachment: fs.createReadStream(filePath)
-                        }, () => {
-                                if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+                                attachment: stream
                         });
 
                 } catch (err) {
                         console.error("error:", err);
-                        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
                         return message.reply(getLang("error", err.message));
                 }
         }
